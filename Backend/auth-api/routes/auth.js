@@ -13,7 +13,7 @@ const groq = new Groq({
     apiKey:process.env.GROQ_API_KEY
   });
 
-const JWT_SECRET = 'supersecretkey';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Signup
 router.post('/signup', async (req, res) => {
