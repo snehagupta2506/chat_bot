@@ -4,11 +4,13 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
 const Groq = require('groq-sdk');
+require('dotenv').config();
+
 const http = require('http');         // Built-in, no install
 const WebSocket = require('ws'); 
 
 const groq = new Groq({
-    apiKey: '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',
+    apiKey:process.env.GROQ_API_KEY
   });
 
 const JWT_SECRET = 'supersecretkey';
