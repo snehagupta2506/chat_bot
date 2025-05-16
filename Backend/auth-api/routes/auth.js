@@ -6,18 +6,14 @@ const db = require('../db');
 const Groq = require('groq-sdk');
 require('dotenv').config();
 
-const http = require('http');         // Built-in, no install
-const WebSocket = require('ws'); 
-
 const groq = new Groq({
-    apiKey:process.env.GROQ_API_KEY
-  });
+  apiKey: process.env.GROQ_API_KEY,
+});
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // Signup
 router.post('/signup', async (req, res) => {
-    console.log("hwello")
   const { email, password } = req.body;
   const hashed = await bcrypt.hash(password, 10);
 
@@ -48,32 +44,62 @@ router.post('/login', (req, res) => {
   });
 });
 
+// Logout
 router.post('/logout', (req, res) => {
-    // Instruct the client to delete the token
-    res.json({ message: 'Logged out successfully' });
-  });
+  res.json({ message: 'Logged out successfully' });
+});
 
+// Regular chat (non-streaming)
 router.post('/chat', async (req, res) => {
-    const userMessage = req.body.message;
-  
+  const userMessage = req.body.message;
+
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: userMessage },
+      ],
+      model: 'llama3-70b-8192',
+    });
+
+    res.json({ message: completion.choices[0]?.message?.content });
+  } catch (error) {
+    console.error('Groq error:', error);
+    res.status(500).json({ error: 'Failed to fetch Groq response.' });
+  }
+});
+
+// Export WebSocket handler
+const handleWebSocket = ws => {
+  console.log("New WebSocket connection");
+  ws.on('message', async (data) => {
+    console.log("Received message:", data.toString());
+    const message = data.toString();
+
     try {
-      const completion = await groq.chat.completions.create({
+      const stream = await groq.chat.completions.create({
         messages: [
-          { role: "system", content: "You are a helpful assistant." },
-          { role: "user", content: userMessage },
+          { role: 'system', content: 'You are a helpful assistant.'},
+          { role: 'user', content: message },
         ],
-        model: "llama3-70b-8192",
+        model: 'llama3-70b-8192',
+        stream: true,
       });
-  
-      res.json({ message: completion.choices[0]?.message?.content });
+
+      for await (const chunk of stream) {
+        const token = chunk.choices?.[0]?.delta?.content;
+        if (token) {
+          ws.send(token);
+        }
+      }
+
+      ws.send('[DONE]');
     } catch (error) {
-      console.error("Groq error:", error);
-      res.status(500).json({ error: "Failed to fetch Groq response." });
+      console.error('Groq WebSocket error:', error);
+      ws.send('[ERROR]');
     }
   });
-  
-//   module.exports = router;
-  
-
+};
 
 module.exports = router;
+module.exports.handleWebSocket = handleWebSocket;
