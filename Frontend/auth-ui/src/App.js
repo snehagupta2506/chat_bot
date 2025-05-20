@@ -17,7 +17,7 @@ const App = () => {
 
   return (
     <Router>
-      <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
+      <nav className="navbar navbar-expand-lg navbar-dark bg-dark" style={{opacity:"0.9"}}>
         <div className="container">
           <Link className="navbar-brand" to="/">NextChat</Link>
           <div className="collapse navbar-collapse">

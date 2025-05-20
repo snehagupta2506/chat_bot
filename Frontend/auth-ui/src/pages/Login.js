@@ -12,6 +12,9 @@ const Login = ({ setIsLoggedIn }) => {
     try {
       const res = await loginUser({ email, password });
       localStorage.setItem('token', res.data.token);
+      localStorage.setItem('userId', res.data.userId);
+      localStorage.setItem('session', res.data.session);
+      
       setIsLoggedIn(true);
       setMsg('Login successful!');
       navigate('/voice-chat');
