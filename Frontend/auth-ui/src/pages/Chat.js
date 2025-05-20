@@ -157,24 +157,37 @@ const VoiceChat = () => {
 
   const handlePlayPause = (text) => {
     if (!("speechSynthesis" in window)) return;
-
+  
     if (isSpeaking) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
-    } else {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "en-US";
-      speechRef.current = utterance;
-      setIsSpeaking(true);
-
-      utterance.onend = () => {
-        setIsSpeaking(false);
-      };
-
-      window.speechSynthesis.speak(utterance);
+      return;
     }
+  
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text]; // Split by sentence
+    let index = 0;
+    setIsSpeaking(true);
+  
+    const speakNext = () => {
+      if (index >= sentences.length) {
+        setIsSpeaking(false);
+        return;
+      }
+  
+      const utterance = new SpeechSynthesisUtterance(sentences[index].trim());
+      utterance.lang = "en-US";
+  
+      utterance.onend = () => {
+        index += 1;
+        speakNext(); // Speak the next sentence
+      };
+  
+      window.speechSynthesis.speak(utterance);
+    };
+  
+    speakNext();
   };
-
+  
   return (
     <div className="d-flex">
       <div className="sidebar bg-dark p-3 w-25">
